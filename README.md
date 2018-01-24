@@ -6,8 +6,20 @@ This is a test program for the udev rules proposed for **systemd**
 
 **USE AT YOUR OWN RISK.**
 
+## Intended audience
+
+Everyone who is willing to give this a try, in particular owners of less
+common hardware (SCSI tapes and medium changers most wanted).
+
+## Running the test
+
+Clone the [github repository](https://github.com/mwilck/test-udev-rules) 
+or [download the tarball](https://codeload.github.com/mwilck/test-udev-rules/tar.gz/master).
+
 Simply run the **test-scsi-rules** script on the system to test, and collect
-the output file (see below).
+the output file (the program prints the file name).
+
+## Background information
 
 The program installs the modified set of rules temporarily under
 `/etc/udev/rules.d`, where it will __take precedence over any system-installed
@@ -23,7 +35,9 @@ unmodified system *before* installing the modified rules, and *after* removing
 them again. Before each run of the test procedure, `systemd-udevd` is restarted.
 
 This *should be safe* unless real udev events occur while the test is
-running. But there are no guarantees, **USE AT YOUR OWN RISK.**
+running. But there are no guarantees. 
+
+**USE AT YOUR OWN RISK.**
 
 At the end, you'll get a `tar.gz` file with the program output. Please email
 it to me for examination. The goal is to get identical results in

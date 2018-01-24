@@ -1,8 +1,9 @@
 # test program for SCSI udev rules
 
-This is a test program for the udev rules proposed for 
-[systemd](https://github.com/systemd/systemd/pull/7594) and 
-[sg3_utils](https://github.com/hreinecke/sg3_utils/pull/22).
+This is a test program for the udev rule changes I am proposing for 
+[systemd/udev](https://github.com/systemd/systemd/pull/7594) and 
+[sg3_utils](https://github.com/hreinecke/sg3_utils/pull/22). These two are
+supposed to go together, but each can be used alone as well.
 
 **USE AT YOUR OWN RISK.**
 
@@ -12,6 +13,8 @@ Everyone who is willing to give this a try, in particular owners of less
 common hardware (__SCSI tapes and medium changers__ most wanted).
 
 ## Running the test
+
+**Dependencies:** standard system packages `systemd`,`udev`, `curl`, and `sg3_utils`.
 
 Clone the [github repository](https://github.com/mwilck/test-udev-rules) 
 or [download the tarball](https://codeload.github.com/mwilck/test-udev-rules/tar.gz/master).

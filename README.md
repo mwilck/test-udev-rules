@@ -10,8 +10,8 @@ Simply run the **test-scsi-rules** script on the system to test, and collect
 the output file (see below).
 
 The program installs the modified set of rules temporarily under
-`/etc/udev/rules.d`, where it will take precedence over any system-installed
-rules. If any existing files there would be overwritten, it aborts.
+`/etc/udev/rules.d`, where it will __take precedence over any system-installed
+rules__. If any existing files there would be overwritten, it aborts.
 The program tries hard to clean up after itself.
 You may want to double-check the contents of `/etc/udev/rules.d` after the
 program has finished.

@@ -1,0 +1,29 @@
+#! /bin/bash
+trap 'trap - ERR; echo error in $BASH_COMMAND on $LINENO >&2; exit 1' ERR
+trap 'trap - 0; eval "$CLEANUP"' 0
+
+CLEANUP=:
+
+TMPD=$(mktemp -d /tmp/rules.XXXXXX)
+#CLEANUP="rm -rf $TMPD;$CLEANUP"
+
+SYSTEMD_GIT=https://raw.githubusercontent.com/mwilck/systemd-1/last-scsi_id/rules
+SG3_GIT=https://raw.githubusercontent.com/mwilck/sg3_utils/master/scripts
+
+fetch_rules() {
+    local f
+    mkdir $TMPD/rules
+    pushd $TMPD/rules >/dev/null
+    for f in 55-zz-scsi_id.rules \
+		 59-storage-hardware.rules \
+		 59-storage-content.rules \
+		 60-peristent-storage.rules \
+		 60-persistent-storage-tape.rules; do
+	curl -o $f  https://raw.githubusercontent.com/mwilck/systemd-1/last-scsi_id/rules/55-zz-scsi_id.rules
+    done
+    popd >/dev/null
+}
+
+echo "TMPD=$TMPD" >&2
+fetch_rules
+

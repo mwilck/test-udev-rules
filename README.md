@@ -1,15 +1,15 @@
 # test program for SCSI udev rules
 
-This is a test program for the udev rules proposed for **systemd**
-(https://github.com/systemd/systemd/pull/7594) and **sg3_utils**
-(https://github.com/hreinecke/sg3_utils/pull/22).
+This is a test program for the udev rules proposed for 
+[systemd](https://github.com/systemd/systemd/pull/7594) and 
+[sg3_utils](https://github.com/hreinecke/sg3_utils/pull/22).
 
 **USE AT YOUR OWN RISK.**
 
 ## Intended audience
 
 Everyone who is willing to give this a try, in particular owners of less
-common hardware (SCSI tapes and medium changers most wanted).
+common hardware (__SCSI tapes and medium changers__ most wanted).
 
 ## Running the test
 
@@ -47,3 +47,8 @@ devices. Some minor deviations are normal. For ATA devices, results will
 appear different in the cases with and without `sg3_utils`, because in the former
 case they are treated as SCSI and in the latter as (S)ATA. The important
 `ID_xxx` variables should be equal, though.
+
+## I want to understand what this will do to my system!
+
+That's very understandable. Please read the script. It just about 100 lines of
+shell code.

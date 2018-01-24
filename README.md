@@ -37,13 +37,17 @@ different combinations of settings for the installed rules, and in the
 unmodified system *before* installing the modified rules, and *after* removing
 them again. Before each run of the test procedure, `systemd-udevd` is restarted.
 
+### How dangerous is this?
+
 This *should be safe*. Unless real udev events for SCSI devices occur while the test is
 running, the view of the system on its SCSI devices won't change, as the
 script itself runs `udevadm test` only. If real events occur during the test,
-cwhile udev is using the rules to-be-tested, no harm should be done, either.
+while udev is using the rules to-be-tested, no harm should be done, either.
 But there are no guarantees.
 
 **USE AT YOUR OWN RISK.**
+
+### Results
 
 At the end, you'll get a `tar.gz` file with the program output. Please email
 it to me for examination. The goal is to get identical results in

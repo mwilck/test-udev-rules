@@ -14,7 +14,11 @@ common hardware (__SCSI tapes and medium changers__ most wanted).
 
 ## Running the test
 
-**Dependencies:** standard system packages `systemd`,`udev`, `curl`, and `sg3_utils`.
+**Dependencies:** standard system packages `systemd`,`udev`, `curl`, and
+`sg3_utils`. The latest versionis of `systemd` and `sg3_utils`, against which I made
+the pull requests, are *not required*, as only the udev rules are tested. In
+current Linux distributions, the system-provided versions of these packages
+should be sufficient.
 
 Clone the [github repository](https://github.com/mwilck/test-udev-rules) 
 or [download the tarball](https://codeload.github.com/mwilck/test-udev-rules/tar.gz/master).
@@ -24,7 +28,8 @@ the output file (the program prints the file name).
 
 ## Background information
 
-The program installs the modified set of rules temporarily under
+The program downloads the modified set of udev rules from github (internet
+connection required), and installs them temporarily under
 `/etc/udev/rules.d`, where it will __take precedence over any system-installed
 rules__. If any existing files there would be overwritten, it aborts.
 The program tries hard to clean up after itself, even in case of errors.

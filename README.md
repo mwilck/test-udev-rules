@@ -30,4 +30,6 @@ it to me for examination. The goal is to get identical results in
 the test procedure in all runs, in particular for `ID_SERIAL` and other
 `ID_xxx` variables, and for the symlinks that control how the system sees the
 devices. Some minor deviations are normal. For ATA devices, results will
-different in the cases with and without sg3_utils.
+appear different in the cases with and without `sg3_utils`, because in the former
+case they are treated as SCSI and in the latter as (S)ATA. The important
+`ID_xxx` variables should be equal, though.

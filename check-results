@@ -1,0 +1,62 @@
+#! /bin/bash
+set -E
+trap 'trap - ERR; echo "$0: error in $BASH_COMMAND on line $LINENO" >&2; exit 1' ERR
+trap 'trap - 0; eval "$CLEANUP"' INT TERM 0
+CLEANUP=:
+ME=$(basename "$0")
+
+[[ $1 && -f "$1" ]]
+DIR=$(basename "$1")
+DIR=${DIR%.tar.gz}
+
+tar xz -C /tmp -f "$1"
+[[ $DIR && -d "/tmp/$DIR" ]]
+
+CLEANUP='cd /; rm -rf /tmp/$DIR;'"$CLEANUP"
+cd "/tmp/$DIR"
+
+TESTS=(01-sysfs 02-inquiry 03-scsi_id 04-after)
+
+sort_links() {
+    local a
+    a=($(printf '%s\n' "$@" | sort))
+    printf '%s\n' "${a[@]}"
+}
+
+check_dev() {
+    local dev=$1 tst diffs dl1 dl2
+    local FILTER
+    echo === $dev ===
+    for tst in ${TESTS[@]}; do
+	[[ -f $tst/$dev ]] || echo '### NOT FOUND ###'
+	# Filter out env vars that are always different and not relevant
+	FILTER='\.SYSFS_PATH=|ID_SCSI=|USEC_INITIALIZED=|\.INQUIRY_DEV=|\.ID_BUS=|ID_SCSI_INQUIRY=|\.BSG_DEV='
+	case "$(basename "$dev")/$tst" in
+	    # scsi_id sets no SCSI_* variables
+	    # sg3_utils don't set ID_SCSI_SERIAL
+	    */*-scsi_id) FILTER="$FILTER|^-SCSI_|ID_SCSI_SERIAL=";;
+	    *st*/*-sysfs|*st*/*-inquiry)
+		FILTER="$FILTER|^\\+SCSI_|ID_SCSI_SERIAL=";;
+	esac
+	diffs=$(diff -u 00-before/$dev $tst/$dev | \
+		    grep '^[-+][^-+]' | egrep -v "($FILTER)") || true
+	[[ -n "$diffs" ]] || continue
+	dl1=$(echo "$diffs" | sed -n s/-DEVLINKS=//p)
+	dl2=$(echo "$diffs" | sed -n s/+DEVLINKS=//p)
+	dl1=$(sort_links $dl1)
+	dl2=$(sort_links $dl2)
+	diffs=$(echo "$diffs" | sed /DEVLINKS/d)
+	[[ -n "$diffs" || "$dl1" != "$dl2" ]] || continue
+	echo "--- 00-before vs. $tst ---"
+	echo "$diffs"
+	if [[ "$dl1" != "$dl2" ]]; then
+	    echo "DEVLINKS: "
+	    diff -u <(echo "$dl1") <(echo "$dl2") | grep '^[-+][^-+]' || true
+	fi
+    done
+}
+
+DEVS=($(find 00-before -name '*.txt' | sed s,^00-before/,,))
+for dev in ${DEVS[@]}; do
+    check_dev "$dev"
+done

@@ -63,6 +63,9 @@ appear different in the cases with and without `sg3_utils`, because in the forme
 case they are treated as SCSI and in the latter as (S)ATA. The important
 `ID_xxx` variables should be equal, though.
 
+The `check_results` script filters the output of the test program to provide
+a quick summary of the differences between the test runs.
+
 ## I want to understand what this will do to my system!
 
 That's very understandable. Please read the script. It just about 100 lines of

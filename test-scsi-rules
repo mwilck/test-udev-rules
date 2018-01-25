@@ -63,7 +63,7 @@ cleanup_rules() {
 }
 get_devices() {
     pushd /sys >/dev/null
-    DEVICES=($(ls -d block/sd* class/scsi_tape/* class/scsi_generic/* class/scsi_changer/* 2>/dev/null || true))
+    DEVICES=($(ls -d block/cciss* block/sd* class/scsi_tape/{n,}st*[0-9] class/scsi_generic/* class/scsi_changer/* 2>/dev/null || true))
     popd >/dev/null
 }
 

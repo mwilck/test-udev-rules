@@ -78,15 +78,21 @@ get_devices() {
 }
 
 do_test() {
-    local dir=$1 dev
+    local dir=$1 dev st en tim
     echo "$ME: running test \"$1\"" >&2
     mkdir -p "$TMPD/$dir"
     pushd "$TMPD/$dir" >/dev/null
     systemctl restart systemd-udevd
     for dev in "${DEVICES[@]}"; do
 	mkdir -p $(dirname "$dev")
+    done
+    st=$(date +%s.%N)
+    for dev in "${DEVICES[@]}"; do
 	udevadm test "/$dev" >"$dev.txt" 2>"$dev.err" || true
     done
+    en=$(date +%s.%N)
+    tim=$(echo $en $st - p | dc)
+    printf "$ME: test \"$1\" took %.2f s\\n" $tim >&2
     popd >/dev/null
 }
 

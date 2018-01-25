@@ -125,5 +125,5 @@ cleanup_rules
 do_test 04-after
 
 echo "$ME: creating result file $TMPD.tar.gz" >&2
-(cd /; tar cfz "$TMPD.tar.gz" "${TMPD#/}")
+tar cz -C /tmp -f "${TMPD}.tar.gz" "${TMPD#/tmp/}"
 echo "$ME: done, thanks. Please send results to <mwilck@suse.com>" >&2

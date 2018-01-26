@@ -17,8 +17,6 @@ DIR=${DIR%.tar.gz}
 [[ -d "/tmp/$DIR" ]]
 cd "/tmp/$DIR"
 
-TESTS=(01-sysfs 02-inquiry 03-scsi_id 04-after)
-
 sort_links() {
     local a
     a=($(printf '%s\n' "$@" | sort))
@@ -26,39 +24,74 @@ sort_links() {
 }
 
 check_dev() {
-    local dev=$1 tst diffs dl1 dl2
+    local tst=$1 dev=$2 ref=$3 diffs dl1 dl2
     local FILTER
-    echo === $dev ===
-    for tst in ${TESTS[@]}; do
-	[[ -f $tst/$dev ]] || echo '### NOT FOUND ###'
-	# Filter out env vars that are always different and not relevant
-	FILTER='\.SYSFS_PATH=|ID_SCSI=|USEC_INITIALIZED=|\.INQUIRY_DEV=|\.ID_BUS=|ID_SCSI_INQUIRY=|\.BSG_DEV='
-	case "$(basename "$dev")/$tst" in
-	    # scsi_id sets no SCSI_* variables
-	    # sg3_utils don't set ID_SCSI_SERIAL
-	    */*-scsi_id) FILTER="$FILTER|^-SCSI_|ID_SCSI_SERIAL=";;
-	    *st*/*-sysfs|*st*/*-inquiry)
-		FILTER="$FILTER|^\\+SCSI_|ID_SCSI_SERIAL=";;
-	esac
-	diffs=$(diff -u 00-before/$dev $tst/$dev | \
-		    grep '^[-+][^-+]' | egrep -v "($FILTER)") || true
-	[[ -n "$diffs" ]] || continue
-	dl1=$(echo "$diffs" | sed -n s/-DEVLINKS=//p)
-	dl2=$(echo "$diffs" | sed -n s/+DEVLINKS=//p)
-	dl1=$(sort_links $dl1)
-	dl2=$(sort_links $dl2)
-	diffs=$(echo "$diffs" | sed /DEVLINKS/d)
-	[[ -n "$diffs" || "$dl1" != "$dl2" ]] || continue
-	echo "--- 00-before vs. $tst ---"
+    [[ -f $tst/$dev ]] || echo '### NOT FOUND ###'
+    # Filter out env vars that are always different and not relevant
+    FILTER='\.SYSFS_PATH=|ID_SCSI=|USEC_INITIALIZED=|\.INQUIRY_DEV=|\.ID_BUS=|ID_SCSI_INQUIRY=|\.BSG_DEV=|TAGS='
+    case "$ref" in
+	# scsi_id sets no SCSI_* variables
+	# sg3_utils don't set ID_SCSI_SERIAL
+	# old sg3_utils ("before") doesn't handle tapes
+	# ID_SCSI_DI/ID_SCSI_SN are used by current code but not necessary
+	*-scsi-id|*-nosg3)
+	    FILTER="$FILTER|^\+SCSI_|ID_SCSI_SERIAL=";;
+	*-before)
+	    FILTER="$FILTER|^\+ID_ATA_|^\+ID_USB_|-ID_SCSI_DI=|-ID_SCSI_SN="
+	    case $(basename $dev) in
+		st*|nst*|sch*|sg*)
+		    FILTER="$FILTER|^\+SCSI_|ID_SCSI_SERIAL=";;
+	    esac
+	    ;;
+    esac
+    case "$tst" in
+	*-scsi_id|*-nosg3)
+	    FILTER="$FILTER|^-SCSI_|ID_SCSI_SERIAL=";;
+    esac
+    diffs=$(diff -u "$ref/$dev" "$tst/$dev" | \
+		grep '^[-+][^-+]' | egrep -v "($FILTER)") || true
+    [[ -n "$diffs" ]] || return 0
+    # echo filter=$FILTER
+    dl1=$(echo "$diffs" | sed -n s/-DEVLINKS=//p)
+    dl2=$(echo "$diffs" | sed -n s/+DEVLINKS=//p)
+    dl1=$(sort_links $dl1)
+    dl2=$(sort_links $dl2)
+    diffs=$(echo "$diffs" | sed /DEVLINKS/d)
+    [[ -n "$diffs" || "$dl1" != "$dl2" ]] || return 0
+
+    echo "
+## ${dev%.txt} ($ref vs. $tst)
+"
+    if [[ -n "$diffs" ]]; then
+	echo '### Properties: 
+```'
 	echo "$diffs"
-	if [[ "$dl1" != "$dl2" ]]; then
-	    echo "DEVLINKS: "
-	    diff -u <(echo "$dl1") <(echo "$dl2") | grep '^[-+][^-+]' || true
-	fi
+	echo '```'
+    fi
+    if [[ "$dl1" != "$dl2" ]]; then
+	echo "### Symlinks: 
+"'```'
+	diff -u <(echo "$dl1") <(echo "$dl2") | grep '^[-+][^-+]' || true
+	echo '```'
+    fi
+}
+
+TESTS=(00-before 01-sysfs 02-inquiry 03-scsi_id 04-nosg3 05-after)
+DEVS=($(find 00-before -name '*.txt' | sed s,^00-before/,, | sort))
+
+compare_with() {
+    local ref=$1 tst dev
+    shift
+
+    for tst in $@; do
+	case "$tst" in "$ref") continue;; esac
+	echo "
+BEGIN $ref vs. $tst"
+	for dev in ${DEVS[@]}; do
+	    check_dev "$tst" "$dev" "$ref"
+	done
+	echo "
+END $ref vs. $tst"
     done
 }
 
-DEVS=($(find 00-before -name '*.txt' | sed s,^00-before/,,))
-for dev in ${DEVS[@]}; do
-    check_dev "$dev"
-done

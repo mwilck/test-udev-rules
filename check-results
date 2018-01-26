@@ -9,10 +9,12 @@ ME=$(basename "$0")
 DIR=$(basename "$1")
 DIR=${DIR%.tar.gz}
 
-tar xz -C /tmp -f "$1"
-[[ $DIR && -d "/tmp/$DIR" ]]
-
-CLEANUP='cd /; rm -rf /tmp/$DIR;'"$CLEANUP"
+[[ $DIR ]]
+[[ -d "/tmp/$DIR" ]] || {
+    tar xz -C /tmp -f "$1"
+    CLEANUP='cd /; rm -rf /tmp/$DIR;'"$CLEANUP"
+}
+[[ -d "/tmp/$DIR" ]]
 cd "/tmp/$DIR"
 
 TESTS=(01-sysfs 02-inquiry 03-scsi_id 04-after)

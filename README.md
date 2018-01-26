@@ -26,47 +26,66 @@ or download and unpack the [tarball](https://codeload.github.com/mwilck/test-ude
 **Run:** Simply run the **test-scsi-rules** script on the system to test, and collect
 the output file (the program prints the file name).
 
-## Background information
+### Test procedure
 
 The program downloads the modified set of udev rules from github (internet
 connection required), and installs them temporarily under
-`/etc/udev/rules.d`, where it will __take precedence over any system-installed
-rules__. If any existing files there would be overwritten, it aborts.
+`/etc/udev/rules.d`, where they will __take precedence over any system-installed
+rules__. If any existing rules files would be overwritten, the program refuses
+to run.
+
 The program tries hard to clean up after itself, even in case of errors.
 You may want to double-check the contents of `/etc/udev/rules.d` after the
 program has finished.
 
 The test procedure runs `udevadm test` for all SCSI devices it detects in the
-system, and stores the output. This procedure is repeated 3 times, for
-different combinations of settings for the installed rules, and in the
-unmodified system *before* installing the modified rules, and *after* removing
-them again. Before each run of the test procedure, `systemd-udevd` is restarted.
+system, and stores the output. This procedure is repeated 4 times, for
+different udev rule sets, and in the unmodified system *before* installing the
+modified rules, and *after* removing them again.
 
 ### How dangerous is this?
 
-This *should be safe*. Unless real udev events for SCSI devices occur while the test is
-running, the view of the system on its SCSI devices won't change, as the
-script itself runs `udevadm test` only. If real events occur during the test,
-while udev is using the rules to-be-tested, no harm should be done, either.
-But there are no guarantees.
+This *should be safe*, as the test script itself runs `udevadm test` only, and
+thus doesn't affect the running system.
 
-**USE AT YOUR OWN RISK.**
+The potential risk is __real udev CHANGE events__ occuring while the test is
+running (unless you have 1000s of SCSI devices, the test should be finished in
+less than a minute). If this happens, the system udev daemon uses the current
+test rule set, and in very rare circumstances the results may differ in
+significant ways from previous runs. In the worst case, the system may use the
+device differently after the event (e.g. if `SYSTEMD_READY` changes). 
+Thus it's recommended not to do e.g. SCSI device probing while this test is
+running. **USE AT YOUR OWN RISK.** 
 
-### Results
+### I want to understand exactly what this will do to my system!
+
+Please read the `test-scsi-rules` script. It just about 100 lines of shell code.
+
+## Inspecting test results
 
 At the end, you'll get a `tar.gz` file with the program output. Please email
 it to me for examination. The goal is to get identical results in
 the test procedure in all runs, in particular for `ID_SERIAL` and other
-`ID_xxx` variables, and for the symlinks that control how the system sees the
-devices. Some minor deviations are normal. For ATA devices, results will
-appear different in the cases with and without `sg3_utils`, because in the former
-case they are treated as SCSI and in the latter as (S)ATA. The important
-`ID_xxx` variables should be equal, though.
+`ID_xxx` variables.
 
-The `check_results` script filters the output of the test program to provide
-a quick summary of the differences between the test runs.
+Use `check_results` script to get an overview over the test results. 
+This script filters the output of the test program to provide
+a quick summary of the differences between the test runs. It also prints
+explanations for some expected errors.
 
-## I want to understand what this will do to my system!
+### List of test scenarios
 
-That's very understandable. Please read the script. It just about 100 lines of
-shell code.
+ - **00-before:** This is just the default system configuration.
+ - **01-sysfs:** Uses the new rule set with 55-scsi-sg3_utils.rules,
+   trying to read SCSI VPD pages from sysfs if possible.
+ - **02-inquiry:** Similar to 01-sysfs, but without reading VPD pages
+   from sysfs; sg_inq is called on the device nodes instead. The results
+   should be almost identical to 01-sysfs.
+ - **03-scsi_id:** Uses the new rule set with 55-scsi-sg3_utils.rules
+   disabled, i.e. scsi_id based rules from 55-zz-scsi_id.rules
+   are in effect.
+ - **04-nosg3:** Uses the default system rule set with 55-scsi-sg3_utils.rules
+   disabled, i.e. scsi_id based rules from 60-persistent-storage.rules
+   are in effect.
+ - **05-after:** Exactly the same as 00-before. Used only to make sure no
+   changes remain after the testing ends.

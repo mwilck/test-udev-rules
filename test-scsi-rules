@@ -123,7 +123,7 @@ do_test() {
     echo "$ME: running test \"$1\"" >&2
     mkdir -p "$TMPD/$dir"
     pushd "$TMPD/$dir" >/dev/null
-    systemctl restart systemd-udevd
+    ### DO NOT systemctl restart systemd-udevd, NOT NECESSARY.
     for dev in "${DEVICES[@]}"; do
 	mkdir -p $(dirname "$dev")
     done

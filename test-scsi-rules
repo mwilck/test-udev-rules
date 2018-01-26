@@ -66,7 +66,9 @@ fetch_rules() {
 
 check_etc_rulesd() {
     local f
-    for f in $ALL_RULES $TEST_RULES; do
+    for f in $ALL_RULES $TEST_RULES 55-storage-hardware.rules \
+			58-scsi-sg3_symlink.rules \
+			$COMPAT_RULES; do
 	# Don't overwrite any existing system rules
 	[[ ! -e "/etc/udev/rules.d/$f" ]] || {
 	    echo "/etc/udev/rules.d/$f exists - aborting" >&2
@@ -75,17 +77,47 @@ check_etc_rulesd() {
     done
 }
 
-cleanup_rules() {
-    for x in $ALL_RULES; do
+disable_sg3() {
+    local x
+    for x in $SG3_RULES 58-scsi-sg3_symlink.rules; do
+	>"/etc/udev/rules.d/$x"
+    done
+}
+
+disable_compat() {
+    local f
+    # Disable compat rules, they generate artefacts
+    # This will be undone by cleanup_rules
+    for f in $COMPAT_RULES; do
+	>/etc/udev/rules.d/$f
+    done
+}
+
+enable_sg3() {
+    local x
+    for x in $SG3_RULES 58-scsi-sg3_symlink.rules; do
 	rm -f "/etc/udev/rules.d/$x"
     done
 }
-get_devices() {
-    pushd /sys >/dev/null
-    DEVICES=($(ls -d block/cciss* block/sd* class/scsi_tape/{n,}st*[0-9] class/scsi_generic/* class/scsi_changer/* 2>/dev/null || true))
-    popd >/dev/null
+
+prefer_sg_inq() {
+    cat >"/etc/udev/rules.d/$TEST_RULES" <<EOF
+SUBSYSTEMS=="scsi", ENV{ID_SCSI_INQUIRY}="0"
+EOF
 }
 
+cleanup_rules() {
+    for x in $ALL_RULES 58-scsi-sg3_symlink.rules \
+			$COMPAT_RULES; do
+	rm -f "/etc/udev/rules.d/$x"
+    done
+}
+
+get_devices() {
+    pushd /sys >/dev/null
+    DEVICES=($(ls -d block/cciss* block/sd*[a-z] block/sd*[a-z]/sd*[0-9] block/sr* class/scsi_tape/{n,}st*[0-9] class/scsi_generic/* class/scsi_changer/* 2>/dev/null || true))
+    popd >/dev/null
+}
 do_test() {
     local dir=$1 dev st en tim
     echo "$ME: running test \"$1\"" >&2
@@ -111,6 +143,10 @@ check_reqs
 check_etc_rulesd
 fetch_rules
 
+CLEANUP='cleanup_rules;'"$CLEANUP"
+
+disable_compat
+
 get_devices
 [[ ${#DEVICES[@]} -gt 0 ]] || {
     echo "$ME: no SCSI devices found" >&2
@@ -121,24 +157,32 @@ echo "$ME: ${#DEVICES[@]} SCSI devices will be checked" >&2
 do_test 00-before
 
 # sg3_utils reading sysfs inquiry attributes
-CLEANUP='cleanup_rules;'"$CLEANUP"
-cp -a $RULESD/*.rules /etc/udev/rules.d
+for r in $ALL_RULES; do
+    cp -a "$RULESD/$r" /etc/udev/rules.d
+done
+
 do_test 01-sysfs
 
-cat >"/etc/udev/rules.d/$TEST_RULES" <<EOF
-SUBSYSTEMS=="scsi", ENV{ID_SCSI_INQUIRY}="0"
-EOF
 # sg3_utils calling sg_inq
+prefer_sg_inq
 do_test 02-inquiry
 
 # sg3_utils deactivated - using scsi_id
 rm "/etc/udev/rules.d/$TEST_RULES"
->"/etc/udev/rules.d/$SG3_RULES"
+disable_sg3
 do_test 03-scsi_id
+enable_sg3
 
 cleanup_rules
-do_test 04-after
+disable_compat
+disable_sg3
+do_test 04-nosg3
+enable_sg3
+
+rm -f "/etc/udev/rules.d/$SG3_RULES"
+do_test 05-after
 
 echo "$ME: creating result file $TMPD.tar.gz" >&2
 tar cz -C /tmp -f "${TMPD}.tar.gz" "${TMPD#/tmp/}"
 echo "$ME: done, thanks. Please send results to <mwilck@suse.com>" >&2
+echo "$ME: run 'check-results ${TMPD}.tar.gz' to inspect" >&2

@@ -86,6 +86,7 @@ explanations for some expected errors.
    are in effect.
  - **04-nosg3:** Uses the default system rule set with 55-scsi-sg3_utils.rules
    disabled, i.e. scsi_id based rules from 60-persistent-storage.rules
-   are in effect.
+   are in effect. On systems that don't install 55-scsi-sg3_utils.rules
+   by default (such as Fedora), this is identical to 00-before.
  - **05-after:** Exactly the same as 00-before. Used only to make sure no
    changes remain after the testing ends.

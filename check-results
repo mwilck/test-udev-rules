@@ -38,6 +38,7 @@ check_dev() {
 	    FILTER="$FILTER|^\+SCSI_|ID_SCSI_SERIAL=";;
 	*-before)
 	    FILTER="$FILTER|^\+ID_ATA_|^\+ID_USB_|-ID_SCSI_DI=|-ID_SCSI_SN="
+	    [[ o"$DIST_SG3" = oyes ]] || FILTER="$FILTER|^\+SCSI_"
 	    case $(basename $dev) in
 		st*|nst*|sch*|sg*)
 		    FILTER="$FILTER|^\+SCSI_|ID_SCSI_SERIAL=";;
@@ -78,6 +79,13 @@ check_dev() {
 
 TESTS=(00-before 01-sysfs 02-inquiry 03-scsi_id 04-nosg3 05-after)
 DEVS=($(find 00-before -name '*.txt' | sed s,^00-before/,, | sort))
+
+if [[ -f /usr/lib/udev/rules.d/55-scsi-sg3_id.rules || \
+	  -f /lib/udev/rules.d/55-scsi-sg3_id.rules ]]; then
+    DIST_SG3=yes
+else
+    DIST_SG3=
+fi
 
 compare_with() {
     local ref=$1 tst dev
@@ -124,7 +132,8 @@ because they would cause irritating 'false positives'.
    are in effect.
  - **04-nosg3:** Uses the default system rule set with 55-scsi-sg3_utils.rules
    disabled, i.e. scsi_id based rules from 60-persistent-storage.rules
-   are in effect.
+   are in effect. On systems that don't install 55-scsi-sg3_utils.rules
+   by default (such as Fedora), this is identical to 00-before.
  - **05-after:** Exactly the same as 00-before. Used only to make sure no
    changes remain after the testing ends.
 "
@@ -164,12 +173,17 @@ compare_with 00-before 01-sysfs
 echo "
 # OLD vs. NEW with scsi_id: Expect a few improvements
 
-- ID_BUS added for some devices
+(Expect almost no changes on Fedora/RHEL).
+
+- ID_BUS added for some devices (medium changers)
 - SCSI detection runs *after multipath detection* with \"OLD\" 04-nosg3
   (except on Fedora/RHEL). This may cause multipath detection to fail
   (SYSTEMD_READY, DM_MULTIPATH_DEVICE_PATH), which may affect how the
   device is processed further (LVM etc.)"
 compare_with 04-nosg3 03-scsi_id
+
+# The following test is pointless if sg3_utils wasn't used in the OS
+[[ o"$DIST_SG3" = oyes ]] || exit 0
 
 echo "
 # !! TESTING OF PROPOSED PATCHES ENDS HERE !!

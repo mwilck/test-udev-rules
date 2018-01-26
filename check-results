@@ -95,3 +95,101 @@ END $ref vs. $tst"
     done
 }
 
+echo "\
+# SCSI UDEV RULE TEST RESULT SUMMARY
+
+The following output compares results of different udev rule
+sets from test run \"$DIR\". Each section lists differences
+between two rule sets. A short preamble in each section explains
+what differences are expected, and why. If you find additional
+changes or differences, please report them to mwilck@suse.com.
+
+Some known-to-be-negligible differences are filtered out in order
+to make this output human readable. See code for FILTER in
+$ME for details.
+
+Some known 'compatibility' rules are disabled during the test,
+because they would cause irritating 'false positives'.
+
+## List of test scenarios
+
+ - **00-before:** This is just the default system configuration.
+ - **01-sysfs:** Uses the new rule set with 55-scsi-sg3_utils.rules,
+   trying to read SCSI VPD pages from sysfs if possible.
+ - **02-inquiry:** Similar to 01-sysfs, but without reading VPD pages
+   from sysfs; sg_inq is called on the device nodes instead. The results
+   should be almost identical to 01-sysfs.
+ - **03-scsi_id:** Uses the new rule set with 55-scsi-sg3_utils.rules
+   disabled, i.e. scsi_id based rules from 55-zz-scsi_id.rules
+   are in effect.
+ - **04-nosg3:** Uses the default system rule set with 55-scsi-sg3_utils.rules
+   disabled, i.e. scsi_id based rules from 60-persistent-storage.rules
+   are in effect.
+ - **05-after:** Exactly the same as 00-before. Used only to make sure no
+   changes remain after the testing ends.
+"
+
+echo "
+# BEFORE and AFTER test: Expect no differences
+
+(Just to make sure we didn't break stuff)"
+compare_with 00-before 05-after
+
+echo "
+# NEW sysfs vs. sg_inq: Expect very few differences
+
+- differences only for devices with blacklisted VPDs (e.g. USB)
+- for these sg_inq will provide some extra links and properties"
+compare_with 01-sysfs 02-inquiry
+
+echo "
+# NEW sg3_utils vs. scsi_id: Expect some minor differences
+
+- sg3_utils creates some additional SCSI symlinks (minor)
+- sg3_utils sets ID_VENDOR (negiligible)
+- scsi_id sets ID_WWN_VENDOR_EXTENSION (can be ignored)
+- scsi_id doesn't support schX"
+compare_with 01-sysfs 03-scsi_id
+
+echo "
+# OLD vs. NEW with sg3_utils: Expect some improvements
+
+- ID_WWN is now shortened to 16 chars
+- ID_TARGET_PORT is available
+- medium changers are handled
+- USB and ATA devices treated as such (not as SCSI), causing diffences
+  for ID_MODEL and ID_REVISION"
+compare_with 00-before 01-sysfs
+
+echo "
+# OLD vs. NEW with scsi_id: Expect a few improvements
+
+- ID_BUS added for some devices
+- SCSI detection runs *after multipath detection* with \"OLD\" 04-nosg3
+  (except on Fedora/RHEL). This may cause multipath detection to fail
+  (SYSTEMD_READY, DM_MULTIPATH_DEVICE_PATH), which may affect how the
+  device is processed further (LVM etc.)"
+compare_with 04-nosg3 03-scsi_id
+
+echo "
+# !! TESTING OF PROPOSED PATCHES ENDS HERE !!
+
+# OLD sg3_utils vs. scsi_id: Expect some differences
+
+The is irrelevant for testing the patches, just informational,
+to see the current state of affairs.
+
+- some ATA/usb devices are treated as scsi with sg3_utils, causing
+  differences for ID_VENDOR, ID_MODEL, etc.
+- ID_WWN is 16 chars with scsi_id, but possibly more with sg3_utils
+- differences in model string length (ata_id vs sg_inq)
+- scsi_id rules are run *after* multipath rules (see
+  \"OLD/NEW with scsi_id\" above), causing follow-up differences."
+compare_with 00-before 04-nosg3
+
+## Here come "full comparisons"
+## But the stuff above is more intuitive and covers everything
+
+#compare_with 00-before 01-sysfs 02-inquiry 03-scsi_id 04-nosg3 05-after
+#compare_with 04-nosg3 01-sysfs 02-inquiry 03-scsi_id
+#compare_with 01-sysfs 02-inquiry 03-scsi_id

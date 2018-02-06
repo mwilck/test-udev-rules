@@ -21,15 +21,17 @@ SHA1SUMS="\
 0db90b985cd11a317d7fa4a1eaba556017f9b489  54-storage-hardware.rules
 e748da466ece4e8e29745c16e55ca2419cd3b638  55-scsi-sg3_id.rules
 9582c6924cd00d5443a2b694a6220ab3c460c683  55-zz-scsi_id.rules
+9952600a396efc6baa5fd2aebc418355270c1f42  58-cdrom_id.rules
 63274829f3b94ea91e1cf118a79cce92dd672dc0  59-storage-content.rules
+da39a3ee5e6b4b0d3255bfef95601890afd80709  60-cdrom_id.rules
 beee2c557ccb0a22e6e4f89a0eb424287b14cb45  60-persistent-storage.rules
 af1974203de01b385a9a55427cecfa3326a23ca1  60-persistent-storage-tape.rules"
 
 UDEV_RULES="55-zz-scsi_id.rules 54-storage-hardware.rules \
-59-storage-content.rules \
+58-cdrom_id.rules 59-storage-content.rules \
 60-persistent-storage.rules 60-persistent-storage-tape.rules"
 SG3_RULES="55-scsi-sg3_id.rules"
-ALL_RULES="$UDEV_RULES $SG3_RULES"
+ALL_RULES="$UDEV_RULES $SG3_RULES 60-cdrom_id.rules"
 TEST_RULES="10-test-scsi.rules"
 
 # These rules are present on some SUSE distros to provide backward
@@ -58,6 +60,7 @@ fetch_rules() {
     for f in $SG3_RULES; do
 	curl -s -o "$f" "$SG3_GIT/$f"
     done
+    >60-cdrom_id.rules
     sha1sum -c <<<"$SHA1SUMS"
     r=$?
     popd >/dev/null

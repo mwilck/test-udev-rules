@@ -19,7 +19,7 @@ SG3_GIT=https://raw.githubusercontent.com/mwilck/sg3_utils/master/scripts
 
 SHA1SUMS="\
 0db90b985cd11a317d7fa4a1eaba556017f9b489  54-storage-hardware.rules
-e748da466ece4e8e29745c16e55ca2419cd3b638  55-scsi-sg3_id.rules
+2d0e0e4ad360eaf4ec05eee4eef00cb93fe3b5de  55-scsi-sg3_id.rules
 9582c6924cd00d5443a2b694a6220ab3c460c683  55-zz-scsi_id.rules
 9952600a396efc6baa5fd2aebc418355270c1f42  58-cdrom_id.rules
 63274829f3b94ea91e1cf118a79cce92dd672dc0  59-storage-content.rules

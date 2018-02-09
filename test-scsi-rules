@@ -126,6 +126,8 @@ do_test() {
     echo "$ME: running test \"$1\"" >&2
     mkdir -p "$TMPD/$dir"
     pushd "$TMPD/$dir" >/dev/null
+    sha1sum /usr/lib/udev/rules.d/*.rules /etc/udev/rules.d/*.rules \
+	    >"$TMPD/$dir/rules.txt"
     ### DO NOT systemctl restart systemd-udevd, NOT NECESSARY.
     for dev in "${DEVICES[@]}"; do
 	mkdir -p $(dirname "$dev")

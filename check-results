@@ -78,7 +78,8 @@ check_dev() {
 }
 
 TESTS=(00-before 01-sysfs 02-inquiry 03-scsi_id 04-nosg3 05-after)
-DEVS=($(find 00-before -name '*.txt' | sed s,^00-before/,, | sort))
+# skip rules.txt
+DEVS=($(find 00-before -mindepth 2 -name '*.txt' | sed s,^00-before/,, | sort))
 
 if [[ -f /usr/lib/udev/rules.d/55-scsi-sg3_id.rules || \
 	  -f /lib/udev/rules.d/55-scsi-sg3_id.rules ]]; then
@@ -181,6 +182,21 @@ echo "
   (SYSTEMD_READY, DM_MULTIPATH_DEVICE_PATH), which may affect how the
   device is processed further (LVM etc.)"
 compare_with 04-nosg3 03-scsi_id
+
+echo "
+# NEW udev+sg3 rules vs. NEW sg3 rules with OLD udev rules
+
+Expect little changes.
+"
+compare_with 01-sysfs 06-sg3-only
+
+echo "
+# OLD udev+sg3 rules vs. NEW sg3 rules with OLD udev rules
+
+Expect some improvements. On systems not using sg3_utils rules,
+this comes down to scsi_id vs. sg3_utils!
+"
+compare_with 00-before 06-sg3-only
 
 # The following test is pointless if sg3_utils wasn't used in the OS
 [[ o"$DIST_SG3" = oyes ]] || exit 0

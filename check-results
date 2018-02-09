@@ -137,6 +137,8 @@ because they would cause irritating 'false positives'.
    by default (such as Fedora), this is identical to 00-before.
  - **05-after:** Exactly the same as 00-before. Used only to make sure no
    changes remain after the testing ends.
+ - **06-sg3-only:** Uses the default system ruleset from systemd/udev with
+   the updated `sg3_utils` ruleset. Simulates an update of `sg3_utils` only.
 "
 
 echo "

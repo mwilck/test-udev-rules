@@ -21,6 +21,7 @@ SG3_GIT=https://raw.githubusercontent.com/$SG3_REPO/sg3_utils/$SG3_COMMIT/script
 
 SHA1SUMS="\
 dfe91dea56decc38b6d540040c15e7aa0f73227d  53-storage-hardware.rules
+1053d093e759132ce7b51aeec324abb3904d8be3  54-before-scsi-sg3_id.rules
 2d0e0e4ad360eaf4ec05eee4eef00cb93fe3b5de  55-scsi-sg3_id.rules
 9582c6924cd00d5443a2b694a6220ab3c460c683  55-zz-scsi_id.rules
 9952600a396efc6baa5fd2aebc418355270c1f42  58-cdrom_id.rules
@@ -32,7 +33,7 @@ af1974203de01b385a9a55427cecfa3326a23ca1  60-persistent-storage-tape.rules"
 UDEV_RULES="55-zz-scsi_id.rules 53-storage-hardware.rules \
 58-cdrom_id.rules 59-storage-content.rules \
 60-persistent-storage.rules 60-persistent-storage-tape.rules"
-SG3_RULES="55-scsi-sg3_id.rules"
+SG3_RULES="55-scsi-sg3_id.rules 54-before-scsi-sg3_id.rules"
 ALL_RULES="$UDEV_RULES $SG3_RULES 60-cdrom_id.rules"
 TEST_RULES="10-test-scsi.rules"
 

@@ -35,7 +35,6 @@ UDEV_RULES="55-zz-scsi_id.rules 53-storage-hardware.rules \
 60-persistent-storage.rules 60-persistent-storage-tape.rules"
 SG3_RULES="55-scsi-sg3_id.rules 54-before-scsi-sg3_id.rules"
 ALL_RULES="$UDEV_RULES $SG3_RULES 60-cdrom_id.rules"
-TEST_RULES="10-test-scsi.rules"
 
 # These rules are present on some SUSE distros to provide backward
 # compatibility towards older releases.
@@ -64,6 +63,9 @@ fetch_rules() {
 	curl -s -o "$f" "$SG3_GIT/$f"
     done
     >60-cdrom_id.rules
+    cat >10-test-scsi.rules <<EOF
+SUBSYSTEMS=="scsi", ENV{ID_SCSI_INQUIRY}="0"
+EOF
     sha1sum -c <<<"$SHA1SUMS"
     r=$?
     popd >/dev/null
@@ -72,7 +74,7 @@ fetch_rules() {
 
 check_etc_rulesd() {
     local f
-    for f in $ALL_RULES $TEST_RULES 55-storage-hardware.rules \
+    for f in $ALL_RULES 10-test-scsi.rules 55-storage-hardware.rules \
 			58-scsi-sg3_symlink.rules \
 			$COMPAT_RULES; do
 	# Don't overwrite any existing system rules
@@ -83,11 +85,19 @@ check_etc_rulesd() {
     done
 }
 
-disable_sg3() {
+_disable_rules() {
     local x
-    for x in $SG3_RULES 58-scsi-sg3_symlink.rules; do
+    for x in "$@"; do
 	>"/etc/udev/rules.d/$x"
     done
+}
+
+disable_sg3() {
+    _disable_rules $SG3_RULES 58-scsi-sg3_symlink.rules
+}
+
+enable_sg3_orig() {
+    _cleanup_rules $SG3_RULES 58-scsi-sg3_symlink.rules
 }
 
 disable_compat() {
@@ -99,17 +109,19 @@ disable_compat() {
     done
 }
 
-enable_sg3() {
-    local x
-    for x in $SG3_RULES 58-scsi-sg3_symlink.rules; do
-	rm -f "/etc/udev/rules.d/$x"
-    done
+prefer_sg_inq() {
+    _install_rules 10-test-scsi.rules
 }
 
-prefer_sg_inq() {
-    cat >"/etc/udev/rules.d/$TEST_RULES" <<EOF
-SUBSYSTEMS=="scsi", ENV{ID_SCSI_INQUIRY}="0"
-EOF
+prefer_sysfs() {
+    _cleanup_rules 10-test-scsi.rules
+}
+
+_install_rules() {
+    local r
+    for r in "$@"; do
+	cp -af "$RULESD/$r" /etc/udev/rules.d
+    done
 }
 
 _cleanup_rules() {
@@ -117,10 +129,6 @@ _cleanup_rules() {
     for x in "$@"; do
 	rm -f "/etc/udev/rules.d/$x"
     done
-}
-
-cleanup_udev_rules() {
-    _cleanup_rules $UDEV_RULES
 }
 
 cleanup_rules() {
@@ -173,32 +181,31 @@ echo "$ME: ${#DEVICES[@]} SCSI devices will be checked" >&2
 do_test 00-before
 
 # sg3_utils reading sysfs inquiry attributes
-for r in $ALL_RULES; do
-    cp -a "$RULESD/$r" /etc/udev/rules.d
-done
+_install_rules $ALL_RULES
 
 do_test 01-sysfs
 
 # sg3_utils calling sg_inq
 prefer_sg_inq
 do_test 02-inquiry
-
-# sg3_utils deactivated - using scsi_id
-rm "/etc/udev/rules.d/$TEST_RULES"
-disable_sg3
-do_test 03-scsi_id
-enable_sg3
+prefer_sysfs
 
 # remove rules from systemd - simulate test just with updated
 # sg3_utils
-cleanup_udev_rules
+_cleanup_rules $UDEV_RULES 60-cdrom_id.rules
 do_test 06-sg3-only
+_install_rules $UDEV_RULES 60-cdrom_id.rules
+
+# sg3_utils deactivated - using scsi_id
+disable_sg3
+do_test 03-scsi_id
+enable_sg3_orig
 
 cleanup_rules
 disable_compat
 disable_sg3
 do_test 04-nosg3
-enable_sg3
+enable_sg3_orig
 
 rm -f "/etc/udev/rules.d/$SG3_RULES"
 do_test 05-after

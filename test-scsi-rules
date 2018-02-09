@@ -112,11 +112,19 @@ SUBSYSTEMS=="scsi", ENV{ID_SCSI_INQUIRY}="0"
 EOF
 }
 
-cleanup_rules() {
-    for x in $ALL_RULES 58-scsi-sg3_symlink.rules \
-			$COMPAT_RULES; do
+_cleanup_rules() {
+    local x
+    for x in "$@"; do
 	rm -f "/etc/udev/rules.d/$x"
     done
+}
+
+cleanup_udev_rules() {
+    _cleanup_rules $UDEV_RULES
+}
+
+cleanup_rules() {
+    _cleanup_rules $ALL_RULES 58-scsi-sg3_symlink.rules $COMPAT_RULES
 }
 
 get_devices() {
@@ -180,6 +188,11 @@ rm "/etc/udev/rules.d/$TEST_RULES"
 disable_sg3
 do_test 03-scsi_id
 enable_sg3
+
+# remove rules from systemd - simulate test just with updated
+# sg3_utils
+cleanup_udev_rules
+do_test 06-sg3-only
 
 cleanup_rules
 disable_compat

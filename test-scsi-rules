@@ -14,20 +14,22 @@ CLEANUP="rm -rf $TMPD;$CLEANUP"
 
 
 COMMIT=last-scsi_id
+SG3_COMMIT=factory
+SG3_REPO=hreinecke
 SYSTEMD_GIT=https://raw.githubusercontent.com/mwilck/systemd-1/$COMMIT/rules
-SG3_GIT=https://raw.githubusercontent.com/mwilck/sg3_utils/master/scripts
+SG3_GIT=https://raw.githubusercontent.com/$SG3_REPO/sg3_utils/$SG3_COMMIT/scripts
 
 SHA1SUMS="\
-0db90b985cd11a317d7fa4a1eaba556017f9b489  54-storage-hardware.rules
+dfe91dea56decc38b6d540040c15e7aa0f73227d  53-storage-hardware.rules
 2d0e0e4ad360eaf4ec05eee4eef00cb93fe3b5de  55-scsi-sg3_id.rules
 9582c6924cd00d5443a2b694a6220ab3c460c683  55-zz-scsi_id.rules
 9952600a396efc6baa5fd2aebc418355270c1f42  58-cdrom_id.rules
-63274829f3b94ea91e1cf118a79cce92dd672dc0  59-storage-content.rules
+3592110f20a8b288b0f541030e498add4aa772dc  59-storage-content.rules
 da39a3ee5e6b4b0d3255bfef95601890afd80709  60-cdrom_id.rules
-beee2c557ccb0a22e6e4f89a0eb424287b14cb45  60-persistent-storage.rules
+16d33e141a73e7a9f2bb1613c3efb2ec5263d8eb  60-persistent-storage.rules
 af1974203de01b385a9a55427cecfa3326a23ca1  60-persistent-storage-tape.rules"
 
-UDEV_RULES="55-zz-scsi_id.rules 54-storage-hardware.rules \
+UDEV_RULES="55-zz-scsi_id.rules 53-storage-hardware.rules \
 58-cdrom_id.rules 59-storage-content.rules \
 60-persistent-storage.rules 60-persistent-storage-tape.rules"
 SG3_RULES="55-scsi-sg3_id.rules"

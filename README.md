@@ -84,9 +84,11 @@ explanations for some expected errors.
  - **03-scsi_id:** Uses the new rule set with 55-scsi-sg3_utils.rules
    disabled, i.e. scsi_id based rules from 55-zz-scsi_id.rules
    are in effect.
- - **04-nosg3:** Uses the default system rule set with 55-scsi-sg3_utils.rules
+ - **04-nosg3:** Uses the default system rule set with `55-scsi-sg3_utils.rules`
    disabled, i.e. scsi_id based rules from 60-persistent-storage.rules
-   are in effect. On systems that don't install 55-scsi-sg3_utils.rules
+   are in effect. On systems that don't install `55-scsi-sg3_utils.rules`
    by default (such as Fedora), this is identical to 00-before.
  - **05-after:** Exactly the same as 00-before. Used only to make sure no
    changes remain after the testing ends.
+ - **06-sg3-only:** Uses the default system ruleset from systemd/udev with
+   the updated `sg3_utils` ruleset. Simulates an update of `sg3_utils` only.
